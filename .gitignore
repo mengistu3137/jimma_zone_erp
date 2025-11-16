@@ -1,0 +1,11 @@
+.env*
+.env.local
+node_modules/
+
+
+/generated/prisma
+
+/src/generated/prisma
+prisma/migrations
+
+public/uploads/

@@ -1,0 +1,1100 @@
+{
+  "info": {
+    "name": "Debo ERP - API Test",
+    "_postman_id": "debo-erp-postman-collection",
+    "description": "Full CRUD, Pagination, Auth, and Automation Tests for Directed Letters API (Debo ERP)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "User Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.token).to.be.a('string');",
+                  "  pm.expect(json.data.user).to.be.an('object');",
+                  "});",
+                  "let json = pm.response.json();",
+                  "pm.environment.set('token', json.data.token);",
+                  "pm.environment.set('userId', json.data.user.id);",
+                  "console.log('🔑 Token:', json.data.token);",
+                  "console.log('👤 User ID:', json.data.user.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@deboerp.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User data retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.user).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Token refreshed successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.token).to.be.a('string');",
+                  "});",
+                  "let json = pm.response.json();",
+                  "pm.environment.set('token', json.data.token);",
+                  "console.log('🔄 New Token:', json.data.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/auth/refresh"
+          }
+        },
+        {
+          "name": "User Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Logout successful', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "pm.environment.set('token', '');",
+                  "console.log('🚪 User logged out');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Users retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.users).to.be.an('array');",
+                  "  pm.expect(json.data.pagination).to.be.an('object');",
+                  "});",
+                  "let json = pm.response.json();",
+                  "console.log('📄 Pagination:', json.data.pagination);",
+                  "console.log('👥 Users count:', json.data.users.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/users?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User created successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.user).to.be.an('object');",
+                  "});",
+                  "let json = pm.response.json();",
+                  "pm.environment.set('userId', json.data.user.id);",
+                  "console.log('✅ User created with ID:', json.data.user.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@deboerp.com\",\n  \"password\": \"password123\",\n  \"role\": \"user\",\n  \"officeId\": \"{{officeId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/users"
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.user).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Update User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User updated successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "});",
+                  "console.log('✏️ User updated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Smith\",\n  \"role\": \"manager\"\n}"
+            },
+            "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Delete User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User deleted successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "console.log('🗑️ User deleted');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Offices",
+      "item": [
+        {
+          "name": "Get All Offices (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Offices retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.offices).to.be.an('array');",
+                  "});",
+                  "let json = pm.response.json();",
+                  "if (json.data.offices.length > 0) {",
+                  "  pm.environment.set('officeId', json.data.offices[0].id);",
+                  "  console.log('🏢 Office ID set:', json.data.offices[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/offices?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Create Office",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Office created successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.office).to.be.an('object');",
+                  "});",
+                  "let json = pm.response.json();",
+                  "pm.environment.set('officeId', json.data.office.id);",
+                  "console.log('🏢 Office created with ID:', json.data.office.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Head Office\",\n  \"code\": \"HO\",\n  \"address\": \"123 Main Street\",\n  \"phone\": \"+1234567890\",\n  \"email\": \"headoffice@deboerp.com\"\n}"
+            },
+            "url": "{{baseUrl}}/offices"
+          }
+        },
+        {
+          "name": "Get Office by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Office retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.office).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/offices/{{officeId}}"
+          }
+        },
+        {
+          "name": "Update Office",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Office updated successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "console.log('✏️ Office updated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Head Office\",\n  \"phone\": \"+0987654321\"\n}"
+            },
+            "url": "{{baseUrl}}/offices/{{officeId}}"
+          }
+        },
+        {
+          "name": "Delete Office",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Office deleted successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "console.log('🗑️ Office deleted');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/offices/{{officeId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Letters",
+      "item": [
+        {
+          "name": "Get All Letters (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Letters retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.letters).to.be.an('array');",
+                  "});",
+                  "let json = pm.response.json();",
+                  "console.log('📄 Letters count:', json.data.letters.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/letters?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Create Letter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Letter created successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.letter).to.be.an('object');",
+                  "});",
+                  "let json = pm.response.json();",
+                  "pm.environment.set('letterId', json.data.letter.id);",
+                  "console.log('📝 Letter created with ID:', json.data.letter.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Important Meeting Agenda\",\n  \"content\": \"This is the content of the letter regarding the upcoming meeting.\",\n  \"type\": \"internal\",\n  \"priority\": \"high\",\n  \"senderOfficeId\": \"{{officeId}}\",\n  \"attachments\": [\"{{fileId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/letters"
+          }
+        },
+        {
+          "name": "Get Letter by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Letter retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.letter).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/letters/{{letterId}}"
+          }
+        },
+        {
+          "name": "Update Letter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Letter updated successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "console.log('✏️ Letter updated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Updated Meeting Agenda\",\n  \"priority\": \"medium\"\n}"
+            },
+            "url": "{{baseUrl}}/letters/{{letterId}}"
+          }
+        },
+        {
+          "name": "Delete Letter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Letter deleted successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "console.log('🗑️ Letter deleted');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/letters/{{letterId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Directed Letters",
+      "item": [
+        {
+          "name": "Get All Directed Letters (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Directed letters retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.directedLetters).to.be.an('array');",
+                  "});",
+                  "let json = pm.response.json();",
+                  "console.log('📨 Directed letters count:', json.data.directedLetters.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/directed-letters?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Create Directed Letter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Directed letter created successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.directedLetter).to.be.an('object');",
+                  "});",
+                  "let json = pm.response.json();",
+                  "pm.environment.set('directedLetterId', json.data.directedLetter.id);",
+                  "console.log('📬 Directed letter created with ID:', json.data.directedLetter.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"letterId\": \"{{letterId}}\",\n  \"receiverOfficeId\": \"{{officeId}}\",\n  \"assignedUserId\": \"{{userId}}\",\n  \"deadline\": \"2025-12-31T23:59:59Z\",\n  \"instructions\": \"Please review and provide feedback by the deadline.\",\n  \"priority\": \"high\"\n}"
+            },
+            "url": "{{baseUrl}}/directed-letters"
+          }
+        },
+        {
+          "name": "Get Directed Letter by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Directed letter retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.directedLetter).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/directed-letters/{{directedLetterId}}"
+          }
+        },
+        {
+          "name": "Update Directed Letter Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Directed letter status updated successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "console.log('🔄 Directed letter status updated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"notes\": \"Working on the review\"\n}"
+            },
+            "url": "{{baseUrl}}/directed-letters/{{directedLetterId}}/status"
+          }
+        },
+        {
+          "name": "Get Directed Letters by Office",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Office directed letters retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.directedLetters).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/directed-letters/office/{{officeId}}"
+          }
+        },
+        {
+          "name": "Get Directed Letters by User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User directed letters retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.data.directedLetters).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/directed-letters/user/{{userId}}"
+          }
+        },
+        {
+          "name": "Delete Directed Letter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Directed letter deleted successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "console.log('🗑️ Directed letter deleted');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/directed-letters/{{directedLetterId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Files",
+      "item": [
+        {
+          "name": "Get File URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('URL generated successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  let json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.url).to.be.a('string');",
+                  "});",
+                  "console.log('🔗 File URL:', pm.response.json().url);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"path\": \"uploads/sample/testfile.pdf\"\n}"
+            },
+            "url": "{{baseUrl}}/files/get-url"
+          }
+        },
+        {
+          "name": "Get Supported File Types",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('File types retrieved successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "let json = pm.response.json();",
+                  "console.log('📂 Supported Types:', json.data || json);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/files/types"
+          }
+        },
+        {
+          "name": "Check File Exists",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Checked file existence successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "console.log('✅ File existence check completed');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/files/check?filename=test.txt"
+          }
+        },
+        {
+          "name": "Upload Single File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('File uploaded successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "let json = pm.response.json();",
+                  "pm.environment.set('fileId', json.data?.id || '');",
+                  "console.log('📁 File ID:', json.data?.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "/path/to/your/test-file.pdf" }
+              ]
+            },
+            "url": "{{baseUrl}}/files/upload"
+          }
+        },
+        {
+          "name": "Upload Multiple Files",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Multiple files uploaded successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "console.log('📤 Multiple files uploaded');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "files", "type": "file", "src": "/path/to/file1.pdf" },
+                { "key": "files", "type": "file", "src": "/path/to/file2.png" }
+              ]
+            },
+            "url": "{{baseUrl}}/files/upload-multiple"
+          }
+        },
+        {
+          "name": "Update File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('File updated successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "console.log('✏️ File metadata updated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{fileId}}\",\n  \"name\": \"Updated File Name\",\n  \"tags\": [\"finance\", \"report\"]\n}"
+            },
+            "url": "{{baseUrl}}/files/update"
+          }
+        },
+        {
+          "name": "Delete File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('File deleted successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "console.log('🗑️ File deleted');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{fileId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/files/delete"
+          }
+        },
+        {
+          "name": "Bulk Delete Files",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Bulk files deleted successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "console.log('🧹 Bulk delete completed');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"{{fileId}}\", \"anotherFileId\"]\n}"
+            },
+            "url": "{{baseUrl}}/files/bulk-delete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Automation Tests",
+      "item": [
+        {
+          "name": "Complete Directed Letter Workflow",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Complete workflow executed successfully', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "console.log('✅ Complete directed letter workflow test passed');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/test/workflow"
+          }
+        },
+        {
+          "name": "Load Test - Multiple Requests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Load test completed', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "console.log('⚡ Load test completed');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/test/load"
+          }
+        }
+      ]
+    }
+  ],
+
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "token", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "officeId", "value": "" },
+    { "key": "letterId", "value": "" },
+    { "key": "directedLetterId", "value": "" },
+    { "key": "fileId", "value": "" }
+  ],
+
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "console.log('🚀 Starting API Test - Debo ERP Directed Letters');",
+          "console.log('Base URL:', pm.variables.get('baseUrl'));"
+        ],
+        "type": "text/javascript"
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "console.log('✅ Test completed with status:', pm.response.code);"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2025-11-12T12:00:00Z",
+  "_postman_exported_using": "Postman/11.x"
+}
