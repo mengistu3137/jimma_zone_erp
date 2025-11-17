@@ -135,6 +135,9 @@ async findUnique(model, where = {}, options = {}) {
     return await prisma[model].findUnique({ where: finalWhere, ...options });
   }
   
+
+  
+
   // ✅ FIND BY ID (with relations, excludes soft-deleted)
   async findById(model, id, options = {}) {
     try {
@@ -203,7 +206,6 @@ async findUnique(model, where = {}, options = {}) {
 
   // ✅ CREATE
   async create(model, data) {
-    console.log(data);
     try {
       const item = await prisma[model].create({ data });
       return { success: true, data: item, message: `${model} created successfully` };

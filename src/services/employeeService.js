@@ -98,7 +98,7 @@ class EmployeeService {
       });
       if (employee) {
         const generatedEmial = `${employee.name.trim()}.${employee.middle_name.trim()}@jimmazone.com`;
-        const email = employee.emial ??generatedEmial.trim() ;
+        const email = employee.emial ?? generatedEmial.trim();
         const username = email;
         const password = this.generateStrongPassword();
         const {
@@ -106,13 +106,13 @@ class EmployeeService {
           middle_name,
           officeId
         } = employee;
-        const employeeRole = await crud.findUnique("role", 
+        const employeeRole = await crud.findUnique("role",
           {
             name: "Employee"
           },
         );
 
-        
+
         const user = await userService.createUser({
           email,
           username,
@@ -123,7 +123,7 @@ class EmployeeService {
         });
         if (user.data && employeeRole) {
           const userId = user.data?.id;
-          await crud.update("employee",employee.id,{userId:userId});
+          await crud.update("employee", employee.id, { userId: userId });
           const userRole = await crud.create("userRole", { userId: userId, roleId: employeeRole.id });
           if (userRole)
             message = { username: username, pass: password, role: "Employee", email: email };
@@ -132,7 +132,7 @@ class EmployeeService {
 
       }
     }
-    return res.status(status).json({message:{...message}});
+    return res.status(status).json({ message: { ...message } });
   }
 
   // 🔹 Create single employee
@@ -146,70 +146,41 @@ class EmployeeService {
       officeId,
       position,
       hireDate,
-      salary,
-      name,
-      middle_name
-    } =
-    data;
-
-    if (!userId) throw new Error("User ID is required.");
-    if (!position) throw new Error("Position is required.");
-    if (!hireDate) throw new Error("Hire date is required.");
-
-    const hireDateObj = new Date(hireDate);
-    if (isNaN(hireDateObj.getTime()))
-      throw new Error("Invalid hire date format.");
-
-    // Validate user
-    const userRes = await crud.findById("user", userId);
-    if (!userRes.success) throw new Error("User not found.");
-
-    // Ensure user is not already an employee
-    const existing = await crud.findAll("employee", {
-      filters: {
-        userId
-      }
-    });
-    if (existing.data.length > 0)
-      throw new Error("User is already an employee.");
-
-    // Validate office
-    if (officeId) {
-      const officeRes = await crud.findById("office", officeId);
-      if (!officeRes.success) throw new Error("Office not found.");
-    }
-
-    return await crud.create("employee", {
       name,
       middle_name,
-      user: {
-        connect: {
-          id: userId
-        }
-      },
-      office: {
-        connect: {
-          id: officeId
-        }
-      } || null,
-      positions: {
+      last_name,
+      gender,
+    } =
+      data;
+
+    const employeeData = { name, middle_name, last_name,gender };
+    if (hireDate) employeeData.hireDate = new Date(hireDate);
+    if (userId) employeeData.userId = new Date(userId);
+
+    if (officeId) employeeData.office = {
+      connect: {
+        id: officeId
+      }
+    } || null;
+    if (position)
+      employeeData.positions = {
         connect: {
           id: position
         }
-      } || null,
-      hireDate: hireDateObj,
-    });
+      } || null;
+    const emp=await crud.create("employee", employeeData);
+    return emp;
   }
 
   // 🔹 Get all employees (pagination + search)
-  async getAllEmployees(req,res) {
+  async getAllEmployees(req, res) {
     const {
       page = 1, pageSize = 10, search, sortBy, sortOrder
     } = req.query;
     const user = await userService.getUserById(req.user?.id);
     if (!user?.data?.office?.id)
       return res.status(500).json({ success: false, message: "You are not assigned to office, please contact" });
-    
+
     const subOffices = await officeService.findAllSubOffices(user?.data?.office?.id);
     const subOfficeIds = subOffices.map((office) => {
       return office.id
@@ -220,34 +191,34 @@ class EmployeeService {
     };
     if (search)
       conditions.OR = [{
+        name: {
+          contains: search
+        }
+      },
+      {
+        middle_name: {
+          contains: search
+        }
+      },
+      {
+        last_name: {
+          contains: search
+        }
+      },
+      {
+        phone: {
+          contains: search
+        }
+      },
+      {
+        office: {
           name: {
             contains: search
           }
-        },
-        {
-          middle_name: {
-            contains: search
-          }
-        },
-        {
-          last_name: {
-            contains: search
-          }
-        },
-        {
-          phone: {
-            contains: search
-          }
-        },
-        {
-          office: {
-            name: {
-              contains: search
-            }
-          }
-        },
+        }
+      },
       ];
-    const emp=await crud.findAll("employee", {
+    const emp = await crud.findAll("employee", {
       page: Number(page),
       pageSize: Number(pageSize),
       where: conditions,
@@ -279,9 +250,9 @@ class EmployeeService {
         },
       },
     });
-     if(emp)
-      return  res.status(200).json(emp);
-  return res.status(500).json({ success: false, message: "Cannot Filter employee" });
+    if (emp)
+      return res.status(200).json(emp);
+    return res.status(500).json({ success: false, message: "Cannot Filter employee" });
   }
 
   // 🔹 Get employee by ID
@@ -461,17 +432,17 @@ class EmployeeService {
     // 1️⃣ Find the manager’s employee record using crud (disable pagination)
     const managerResult = await crud.findAll(
       "employee", {
-        filters: {
-          userId
-        },
-        include: {
-          office: {
-            select: {
-              id: true
-            }
-          }
-        },
+      filters: {
+        userId
       },
+      include: {
+        office: {
+          select: {
+            id: true
+          }
+        }
+      },
+    },
       true // disable pagination (since we expect only one employee record)
     );
 
@@ -485,7 +456,7 @@ class EmployeeService {
 
     // There’s only one employee record per userId; take the first
     const manager = managerResult.data[0];
-    const managerOfficeId = manager.officeId ?? manager.office ?.id;
+    const managerOfficeId = manager.officeId ?? manager.office?.id;
 
     if (!managerOfficeId) {
       throw new Error("Manager does not belong to any office.");
@@ -670,11 +641,11 @@ async function getAllChildOfficeIdsUsingCrud(officeId) {
   // Fetch direct children (disable pagination)
   const childrenResult = await crud.findAll(
     "office", {
-      filters: {
-        parentId: officeId
-      },
-      // no need to include anything — we only care about ids
+    filters: {
+      parentId: officeId
     },
+    // no need to include anything — we only care about ids
+  },
     true // disable pagination
   );
 
@@ -688,7 +659,7 @@ async function getAllChildOfficeIdsUsingCrud(officeId) {
 
   // Recursively collect grandchildren
   for (const child of children) {
-    if (child ?.id) {
+    if (child?.id) {
       collected.push(child.id);
       const subChildren = await getAllChildOfficeIdsUsingCrud(child.id);
       collected.push(...subChildren);

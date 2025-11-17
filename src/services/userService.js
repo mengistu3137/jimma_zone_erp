@@ -67,24 +67,21 @@ class UserService {
 
       // Handle roles separately (admins only)
       if (data.roles) {
+        console.log(data.roles);
         if (!requester.roles?.includes("Admin")) {
           delete data.roles;
         } else {
           const rolesArray = Array.isArray(data.roles)
             ? data.roles
             : [data.roles];
+          await crud.deleteMany("userRole", { userId }, { deletedAt: new Date() });
 
-          // Soft-delete old roles (not hard delete)
-          await crud.updateMany("userRole", { userId }, { deletedAt: new Date() });
-
-          // Fetch valid roles
           const roleRecords = await crud.findAll("role", {
-            where: { name: { in: rolesArray } },
+            where: { id: { in: rolesArray } },
           });
-
-          // Reassign new roles
           for (const role of roleRecords.data || []) {
-            await crud.create("userRole", { userId, roleId: role.id });
+           
+           await crud.create("userRole", { userId, roleId: role.id });
           }
 
           delete data.roles;

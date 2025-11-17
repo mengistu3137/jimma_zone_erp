@@ -75,9 +75,7 @@ class AttendanceService {
   // ----- Authorization / simple validators -----
   async isAdmin(userId) {
     try {
-      const resp = await crud.findById("user", userId, {
-        include: { roles: { include: { role: true } } },
-      });
+      const resp = await userService.getUserById(userId);
       if (!resp.success) return false;
       const user = resp.data;
       if (!user || !user.roles) return false;
@@ -424,6 +422,7 @@ class AttendanceService {
     return { existingIds, nonExistentIds };
   }
   async markAttendance(req, res) {
+
     const data =
       {
         ...req.body,
@@ -432,7 +431,7 @@ class AttendanceService {
     try {
       if (!data.timeTaken) { res.status(400).json({ success: false, message: "Time attendance taken is required" }); }
       if (data.employees) {
-        const isAdmin = this.isAdmin(data.userId);
+        const isAdmin = this.isAdmin(req.user?.id);
         if (!isAdmin)
           res.status(403).json({
             success: false,
@@ -525,22 +524,18 @@ class AttendanceService {
       true
     );
     const transformedAttendance = attendance.data?.reduce((acc, att) => {
-      if (att.date && att.status) {
-
         const formattedDateKey = format(new Date(att?.date), "yyyy-MM-dd");
         if (formattedDateKey) {
           acc[formattedDateKey] = att?.status ?? "";
         }
-      }
       return acc;
-    }, []);
-    const details = attendance.data?.reduce((acc, att) => {
-      if (att.date && att.status) {
+    }, {});
+    const details =await attendance.data?.reduce((acc, att) => {
         const formattedDateKey = format(new Date(att.date), "yyyy-MM-dd");
         acc[formattedDateKey] = att.details;
-      }
       return acc;
-    }, []);
+    }, {});
+
     return { ...attendance, data: transformedAttendance, details: details };
   }
 
@@ -573,11 +568,9 @@ class AttendanceService {
       return office.id
     });
     const offices = [user?.data?.office?.id, ...subOfficeIds];
-    const conditions = {
-     
-    };
+    const conditions = { };
     const employeeFilter = { officeId: { in: offices }};
-    const isAdmin = await this.isAdmin(user.id);
+    const isAdmin = await this.isAdmin(req.user.id);
     if (startDate) {
       conditions.date = {};
       conditions.date.gte = new Date(startDate);
@@ -612,9 +605,9 @@ class AttendanceService {
       page,
       pageSize,
     }, true);
-    const attendancePromises = employees.data.map(async (emp) => {
+
+    const attendancePromises =await  employees.data.map(async (emp) => {
       const att = await this.getEmployeeAttendance(emp.id, conditions);
-      // if(att.data)
       return {
         id: emp.id,
         name: `${emp.name} ${emp.middle_name} ${emp.last_name}`,
@@ -623,8 +616,8 @@ class AttendanceService {
         details: att.details,
       };
     });
-    const attendancesData = (await Promise.all(attendancePromises));
 
+    const attendancesData = (await Promise.all(attendancePromises));
     const resp = {};
     let status = 404;
     if (employees.success) {
@@ -634,7 +627,6 @@ class AttendanceService {
       resp.pagination = employees.pagination;
       res.message = "Successfully retrieved";
     }
-    // res.status(404).json({ success: false, message: attendances.message });
     res.status(status).json({ ...resp });
   }
 
