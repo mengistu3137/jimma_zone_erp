@@ -1,3 +1,6 @@
+// =========================
+// GENERATOR & DATASOURCE
+// =========================
 generator client {
   provider = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
@@ -7,11 +10,16 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+// =========================
+// ENUMS
+// =========================
 enum AnnouncementType {
   OFFICE
   OFFICE_CHILDREN
   PUBLIC
 }
+
 enum AttendanceStatus {
   PRESENT
   LATE
@@ -19,24 +27,28 @@ enum AttendanceStatus {
   LEAVE
   ABSENT
 }
-enum LeaveType{
+
+enum LeaveType {
   MATERNITY
   PATERNITY
   SICK
   ANNUAL
   CASUAL
-  Bereavement 
+  Bereavement
 }
+
 enum APPROVALSTATUS {
   PENDING
   REJECTED
   APPROVED
   ACCEPTED
 }
+
 enum GENDER {
   MALE
   FEMALE
 }
+
 enum EmergencyRelation {
   BROTHER
   MOTHER
@@ -47,29 +59,35 @@ enum EmergencyRelation {
   WIFE
   HUSBAND
 }
-enum AttendanceType{
+
+enum AttendanceType {
   morningCheckIn
   morningCheckOut
   afternoonCheckIn
   afternoonCheckOut
 }
+
+// =========================
+// MODELS
+// =========================
+
 model Announcement {
-  id        String            @id @default(cuid())
+  id        String     @id @default(cuid())
   officeId  String?
-  office    Office?           @relation(fields: [officeId], references: [id])
+  office    Office?    @relation(fields: [officeId], references: [id])
 
   subject   String
   body      String
-  date      DateTime          @default(now())
+  date      DateTime   @default(now())
   filePath  String?
   type      AnnouncementType
 
-  views     Int          @default(0)     
-  expiresAt DateTime?                 
-  pinned    Boolean     @default(false)
+  views     Int        @default(0)
+  expiresAt DateTime?
+  pinned    Boolean    @default(false)
 
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   deletedAt DateTime?
 
   @@index([officeId])
@@ -80,60 +98,63 @@ model User {
   id               String          @id @default(cuid())
   email            String          @unique
   username         String?         @unique
-  password         String 
+  password         String
   name             String
   middle_name      String
   officeId         String?
   office           Office?         @relation(fields: [officeId], references: [id])
+
   appointments     Appointment[]
   attendance       Attendance[]
-  employee         Employee? 
-  officeLeadership OfficeLeader[] 
-  authoredLetters  Letter[]        
-  approvedLetters  Letter[]        @relation("ApprovedLetters") 
-  directedLetters  DirectedLetter[] 
+  employee         Employee?
+  officeLeadership OfficeLeader[]
+  authoredLetters  Letter[]
+  approvedLetters  Letter[]        @relation("ApprovedLetters")
+  directedLetters  DirectedLetter[]
   roles            UserRole[]
 
-   approvedLeaveRequests LeaveRequest[] 
+  approvedLeaveRequests LeaveRequest[]
 
-  isActive         Boolean  @default(true)
-  deletedAt        DateTime?
+  isActive    Boolean     @default(true)
+  deletedAt   DateTime?
 
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  @@index([officeId]) 
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([officeId])
   @@map("users")
 }
 
 model Role {
-  id            String             @id @default(cuid())
-  name          String             @unique
-  description   String?
-  archived      Boolean            @default(false)
-  permissions   RolePermission[]
-  users         UserRole[]
-  deletedAt     DateTime?
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String?
+  archived    Boolean           @default(false)
+  permissions RolePermission[]
+  users       UserRole[]
+  deletedAt   DateTime?
 
   @@map("roles")
 }
 
 model Permission {
-  id            String             @id @default(cuid())
-  name          String             @unique
-  description   String?
-  roles         RolePermission[]
-  deletedAt     DateTime?
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String?
+  roles       RolePermission[]
+  deletedAt   DateTime?
 
   @@map("permissions")
 }
 
 model RolePermission {
-  id             String      @id @default(cuid())
-  roleId         String
-  permissionId   String
-  permission     Permission  @relation(fields: [permissionId], references: [id])
-  role           Role        @relation(fields: [roleId], references: [id])
-  deletedAt      DateTime?
+  id            String      @id @default(cuid())
+  roleId        String
+  permissionId  String
+
+  permission    Permission  @relation(fields: [permissionId], references: [id])
+  role          Role        @relation(fields: [roleId], references: [id])
+  deletedAt     DateTime?
 
   @@unique([roleId, permissionId])
   @@index([permissionId])
@@ -141,11 +162,12 @@ model RolePermission {
 }
 
 model UserRole {
-  id       String @id @default(cuid())
-  userId   String
-  roleId   String
-  role     Role   @relation(fields: [roleId], references: [id])
-  user     User   @relation(fields: [userId], references: [id])
+  id        String    @id @default(cuid())
+  userId    String
+  roleId    String
+
+  role      Role     @relation(fields: [roleId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   deletedAt DateTime?
 
   @@unique([userId, roleId])
@@ -154,36 +176,32 @@ model UserRole {
 }
 
 model Office {
+  id          String     @id @default(cuid())
+  name        String
+  location    String?
 
-  id                  String           @id @default(cuid())
-  name                String
-  location            String?
+  gps_latitude    Float
+  gps_longitude   Float
 
-  gps_latitude       Float
-  gps_longitude      Float
-   
-  phone             String?
-  email             String?          
+  phone       String?
+  email       String?
 
+  logo        String?
+  stamp       String?
 
-  logo                String?          
-  stamp               String?  
-
-  parentId            String?
-  parent              Office?          @relation("OfficeHierarchy", fields: [parentId], references: [id])
-
-  children            Office[]         @relation("OfficeHierarchy")
+  parentId    String?
+  parent      Office?    @relation("OfficeHierarchy", fields: [parentId], references: [id])
+  children    Office[]   @relation("OfficeHierarchy")
 
   users               User[]
-  authoredLetters     Letter[] 
+  authoredLetters     Letter[]
   employees           Employee[]
   appointments        Appointment[]
-  announcements      Announcement[]
+  announcements       Announcement[]
   leaders             OfficeLeader[]
-  directedLetters     DirectedLetter[] @relation("DirectedToOffice") 
-  directedOutLetters  DirectedLetter[] @relation("directedFrom") 
+  directedLetters     DirectedLetter[] @relation("DirectedToOffice")
+  directedOutLetters  DirectedLetter[] @relation("directedFrom")
   deletedAt           DateTime?
-
 
   @@index([parentId])
   @@map("offices")
@@ -192,8 +210,9 @@ model Office {
 model OfficeLeader {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   officeId  String
+
+  user      User     @relation(fields: [userId], references: [id])
   office    Office   @relation(fields: [officeId], references: [id])
 
   startingDate  DateTime @default(now())
@@ -203,7 +222,7 @@ model OfficeLeader {
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
 
-  @@unique([userId, officeId]) 
+  @@unique([userId, officeId])
   @@index([officeId])
   @@map("office_leaders")
 }
@@ -214,8 +233,9 @@ model Appointment {
   subject     String
   description String?
   userId      String
-  status      String 
+  status      String
   officeId    String?
+
   office      Office?  @relation(fields: [officeId], references: [id])
   user        User     @relation(fields: [userId], references: [id])
   deletedAt   DateTime?
@@ -224,35 +244,44 @@ model Appointment {
   @@index([userId])
   @@map("appointments")
 }
-model LeaveRequest{
-   id          String   @id @default(cuid())
-  employeeId  String
-  employee    Employee @relation(fields:[employeeId],references:[id])
-  approvedBy  String?
-  user    User? @relation(fields:[approvedBy],references:[id])
-  startDate      DateTime 
-  daysOfLeave     Int
-  endDate              DateTime
-  leaveType            LeaveType?
-  status              APPROVALSTATUS @default(PENDING)
-  attachmentUrl      String?
-  @@map("leave_requests")  
+
+model LeaveRequest {
+  id            String       @id @default(cuid())
+  employeeId    String
+  employee      Employee     @relation(fields: [employeeId], references: [id])
+
+  approvedBy    String?
+  user          User?        @relation(fields: [approvedBy], references: [id])
+
+  startDate     DateTime
+  daysOfLeave   Int
+  endDate       DateTime
+
+  leaveType     LeaveType?
+  status        APPROVALSTATUS @default(PENDING)
+  attachmentUrl String?
+
+  @@map("leave_requests")
 }
 
 model Letter {
-  id           String           @id @default(cuid())
-  subject      String
-  body         String
-  status       String 
-  userId       String
-  user         User             @relation(fields: [userId], references: [id])
-  officeId     String?
-  office       Office?          @relation(fields: [officeId], references: [id])
-  approvedBy   String?
-  approved     User?            @relation("ApprovedLetters", fields: [approvedBy], references: [id])
-  directed     DirectedLetter[]
-  issuedAt     DateTime         @default(now())
-  deletedAt    DateTime?
+  id          String   @id @default(cuid())
+  subject     String
+  body        String
+  status      String
+  userId      String
+  officeId    String?
+
+  user        User     @relation(fields: [userId], references: [id])
+  office      Office?  @relation(fields: [officeId], references: [id])
+
+  approvedBy  String?
+  approved    User?    @relation("ApprovedLetters", fields: [approvedBy], references: [id])
+
+  directed    DirectedLetter[]
+
+  issuedAt    DateTime @default(now())
+  deletedAt   DateTime?
 
   @@index([approvedBy])
   @@index([officeId])
@@ -261,19 +290,22 @@ model Letter {
 }
 
 model DirectedLetter {
-  id           String   @id @default(cuid())
-  letterId     String
-  letter       Letter   @relation(fields:[letterId], references:[id])
-  officeId     String
-  fromOffice   Office   @relation("directedFrom", fields:[officeId], references:[id])
-  toOfficeId   String
-  toOffice     Office   @relation("DirectedToOffice", fields:[toOfficeId], references:[id])
-  reason       String   @db.Text
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  deletedAt    DateTime?
+  id          String   @id @default(cuid())
+  letterId    String
+  officeId    String
+  toOfficeId  String
+  userId      String
+
+  letter      Letter  @relation(fields: [letterId], references: [id])
+  fromOffice  Office  @relation("directedFrom", fields: [officeId], references: [id])
+  toOffice    Office  @relation("DirectedToOffice", fields: [toOfficeId], references: [id])
+  user        User    @relation(fields: [userId], references: [id])
+
+  reason      String   @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([letterId])
   @@index([toOfficeId])
@@ -285,31 +317,34 @@ model Employee {
   id                String             @id @default(cuid())
   userId            String?            @unique
   user              User?              @relation(fields: [userId], references: [id])
-  email             String? 
-  name              String 
+
+  email             String?
+  name              String
   middle_name       String
   last_name         String?
   gender            GENDER?
   phone             String?
-  birthDate         DateTime? 
+  birthDate         DateTime?
   placeOfBirth      String?
-  maritusStatus     String? 
+  maritusStatus     String?
   photoURL          String?
+
   emergencyPerson   String?
   emergencyContact  String?
   emergencyRelation EmergencyRelation?
+
   officeId          String?
-  office            Office?            @relation(fields: [officeId], references: [id])
+  office            Office?           @relation(fields: [officeId], references: [id])
+
   hireDate          DateTime?
-  deviceId          String? 
+  deviceId          String?
+
   attendance        Attendance[]
-  positions         EmployeePosition[] 
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  positions         EmployeePosition[]
+  leaveRequests     LeaveRequest[]
 
-  leaveRequests LeaveRequest[]
-  
-
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   deletedAt         DateTime?
 
   @@index([officeId])
@@ -319,12 +354,16 @@ model Employee {
 model EmployeePosition {
   id          String         @id @default(cuid())
   employeeId  String
-  employee    Employee       @relation(fields:[employeeId], references:[id])
   positionId  String
-  position    Position       @relation(fields:[positionId], references:[id])
+
+  employee    Employee       @relation(fields: [employeeId], references: [id])
+  position    Position       @relation(fields: [positionId], references: [id])
+
   startDate   DateTime       @default(now())
   endDate     DateTime?
+
   status      APPROVALSTATUS @default(PENDING)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?
@@ -344,17 +383,21 @@ model Position {
   @@map("positions")
 }
 
-model Attendance{
-  id              String           @id @default(cuid())
-  userId          String? 
-  user            User?            @relation(fields: [userId], references: [id])
-  employeeId      String? 
-  employee        Employee?        @relation(fields: [employeeId], references: [id])
-  date            DateTime         @db.Date
-  status          AttendanceStatus?  
-  details         AttendanceDetail[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+model Attendance {
+  id            String       @id @default(cuid())
+  userId        String?
+  employeeId    String?
+
+  user          User?        @relation(fields: [userId], references: [id])
+  employee      Employee?    @relation(fields: [employeeId], references: [id])
+
+  date          DateTime     @db.Date
+  status        AttendanceStatus?
+
+  details       AttendanceDetail[]
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@index([userId])
   @@index([employeeId])
@@ -362,16 +405,19 @@ model Attendance{
 }
 
 model AttendanceDetail {
-  id              String           @id @default(cuid())
-  timestamp       DateTime
-  gps_latitude    Float?
-  gps_longitude   Float?
-  deviceId        String? 
-  attendanceId    String
-  type            AttendanceType 
-  attendance      Attendance @relation(fields:[attendanceId],references:[id])
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id            String       @id @default(cuid())
+  timestamp     DateTime
+  gps_latitude  Float?
+  gps_longitude Float?
+  deviceId      String?
+
+  attendanceId  String
+  attendance    Attendance   @relation(fields: [attendanceId], references: [id])
+
+  type          AttendanceType
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@map("attendance_details")
 }
